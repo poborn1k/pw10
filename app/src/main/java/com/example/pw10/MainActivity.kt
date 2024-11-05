@@ -8,22 +8,63 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarColors
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.material3.rememberDrawerState
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHost
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.pw10.ui.theme.Purple40
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -36,158 +77,131 @@ var number = 1
 class MainActivity : ComponentActivity() {
     lateinit var context: Context
 
+    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         context = applicationContext
         setContent {
-            Column {
-                UpperPart(context)
+            val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+            val navController = rememberNavController()
+            var currentTitle by remember { mutableStateOf("Home") }
 
-                LazyRow(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    items(
-                        arrayOf(
-                            CardInfo("hihihaha 1", R.drawable.hihihaha_rose),
-                            CardInfo("hihihaha 2", R.drawable.hihihaha_rose),
-                            CardInfo("hihihaha 3", R.drawable.hihihaha_rose),
-                            CardInfo("hihihaha 4", R.drawable.hihihaha_rose),
-                            CardInfo("hihihaha 5", R.drawable.hihihaha_rose),
-                            CardInfo("hihihaha 6", R.drawable.hihihaha_rose),
-                            CardInfo("hihihaha 7", R.drawable.hihihaha_rose)
-                        )
-                    ) { item ->
-                        CardViewDisplay(cardInfo = item)
+            ModalNavigationDrawer(
+                drawerState = drawerState,
+                drawerContent = {
+                    ModalDrawerSheet {
+                        ModalDrawerSheet {
+                            Text("Навигация", modifier = Modifier.padding(16.dp))
+                            HorizontalDivider()
+                            NavigationDrawerItem(
+                                label = { Text(text = "Home") },
+                                selected = false,
+                                onClick = {
+                                    navController.navigate("main_screen")
+                                    currentTitle = "Home"
+                                }
+                            )
+                            NavigationDrawerItem(
+                                label = { Text(text = "Profile") },
+                                selected = false,
+                                onClick = {
+                                    navController.navigate("bottom_screen_1")
+                                    currentTitle = "Profile"
+                                }
+                            )
+                            NavigationDrawerItem(
+                                label = { Text(text = "Show sad hamster") },
+                                selected = false,
+                                onClick = {
+                                    navController.navigate("bottom_screen_2")
+                                    currentTitle = "Sad hamster"
+                                }
+                            )
+                        }
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun UpperPart(context: Context) {
-    var selectedImage by remember { mutableStateOf<Bitmap?>(null) }
-    var text by remember { mutableStateOf("") }
-    var isLoading1 by remember { mutableStateOf(false) }
-    var isLoading2 by remember { mutableStateOf(false) }
-    val coroutineScope = rememberCoroutineScope()
-
-    Column(
-        modifier = Modifier.padding(20.dp).fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        if (selectedImage != null) {
-            Image(
-                modifier = Modifier.size(200.dp),
-                bitmap = selectedImage!!.asImageBitmap(),
-                contentDescription = "image"
-            )
-        } else {
-            Image(
-                modifier = Modifier.size(200.dp),
-                painter = painterResource(R.drawable.ic_launcher_background),
-                contentDescription = "image"
-            )
-        }
-
-        OutlinedTextField(
-            value = text,
-            onValueChange = { text = it },
-            label = { Text("URL изображения") }
-        )
-
-        Button(onClick = {
-            isLoading1 = true
-            coroutineScope.launch {
-                selectedImage = createBitmapFromURL(text)
-                isLoading1 = false
-            }
-        }) {
-            Text(if (isLoading1) "Загрузка..." else "Загрузить")
-        }
-
-        Button(onClick = {
-            isLoading2 = true
-            coroutineScope.launch {
-                selectedImage = createBitmapFromURL(text)
-            }
-            coroutineScope.launch {
-                val isExists = saveImage(selectedImage, context)
-                if (isExists && selectedImage != null) {
-                    number++
+            ) {
+                Scaffold(
+                    modifier = Modifier.nestedScroll(TopAppBarDefaults.enterAlwaysScrollBehavior(state = rememberTopAppBarState()).nestedScrollConnection),
+                    topBar = {
+                        AppToolBar(currentTitle)
+                    },
+                    bottomBar = {
+                        CustomBottomAppBar(navController = navController, onTitleChange = {
+                            newTitle -> currentTitle = newTitle
+                        })
+                    }
+                ) { paddingValues ->
+                    Navigation(context = context, navController = navController, innerPadding = paddingValues)
                 }
             }
-            isLoading2 = false
-        }) {
-            Text(if (isLoading2) "Загрузка..." else "Загрузить и сохранить")
-        }
-
-        Button(onClick = {
-            text = ""
-            selectedImage = null
-        }) {
-            Text("Очистить")
         }
     }
 }
 
-suspend fun createBitmapFromURL(stringURL: String): Bitmap? {
-    return withContext(Dispatchers.IO) {
-        var bitmap: Bitmap? = null
-        if (stringURL.isNotEmpty()) {
-            try {
-                val url = URL(stringURL)
-                bitmap = BitmapFactory.decodeStream(url.openStream())
-            } catch (e: Exception) {
-                Log.e("INTERNET ERROR", "${e.message}")
-            }
-        }
-        bitmap
-    }
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AppToolBar(title: String) {
+    TopAppBar(
+        modifier = Modifier
+            .padding(horizontal = 8.dp, vertical = 8.dp)
+            .clip(RoundedCornerShape(20.dp)),
+        title = {
+            Text(
+                text = title,
+                color = MaterialTheme.colorScheme.onBackground.copy(0.7f)
+            )
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(0.6f)
+        ),
+        scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(
+            state = rememberTopAppBarState()
+        )
+    )
 }
-
-suspend fun saveImage(bitmap: Bitmap?, context: Context): Boolean {
-    return withContext(Dispatchers.IO) {
-        val file_name = "new_image" + "_${number}" + ".jpg"
-        if (bitmap != null) {
-            try {
-                val file = File(context.filesDir, file_name)
-                val outputStream = FileOutputStream(file)
-
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
-                outputStream.flush()
-                outputStream.close()
-            } catch (e: Exception) {
-                Log.e("DISK ERROR", "${e.message}")
-            }
-        }
-        File(context.filesDir, file_name).exists()
-    }
-}
-
 
 @Composable
-fun CardViewDisplay(cardInfo: CardInfo) {
-    Card(
-        modifier = Modifier.padding(20.dp),
-        shape = RoundedCornerShape(10.dp),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 5.dp
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Image(
-                modifier = Modifier.size(200.dp),
-                painter = painterResource(cardInfo.intImage),
-                contentDescription = "image",
-                contentScale = ContentScale.Crop
-            )
+fun CustomBottomAppBar(navController: NavHostController, onTitleChange: (String) -> Unit) {
+    BottomAppBar{
+        IconButton(onClick = {
+            navController.navigate("main_screen")
+            onTitleChange("Home")
+        }) {
+            Icon(Icons.Filled.Home, contentDescription = null)
+        }
 
-            Text(modifier = Modifier.padding(top = 10.dp), text = cardInfo.name)
+        IconButton(onClick = {
+            navController.navigate("bottom_screen_1")
+            onTitleChange("Profile")
+        }) {
+            Icon(Icons.Filled.Person, contentDescription = null)
+        }
+
+        IconButton(onClick = {
+            navController.navigate("bottom_screen_2")
+            onTitleChange("Sad hamster")
+        }) {
+            Icon(Icons.Filled.Warning, contentDescription = null)
+        }
+    }
+}
+
+@Composable
+fun Navigation(context: Context, navController: NavHostController, innerPadding: PaddingValues) {
+    NavHost(
+        navController = navController,
+        startDestination = "main_screen",
+        modifier = Modifier.padding(innerPadding)
+    ) {
+        composable("main_screen") {
+            LaunchMainContent(context)
+        }
+        composable("bottom_screen_1") {
+            LaunchSecondScreen()
+        }
+        composable("bottom_screen_2") {
+            LaunchThirdScreen()
         }
     }
 }
